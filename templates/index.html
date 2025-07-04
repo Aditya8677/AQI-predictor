@@ -1,0 +1,345 @@
+<!-- This should replace the content in templates/home.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Quality Index Predictor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: none;
+            overflow: hidden;
+        }
+        .card-header {
+            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+            color: white;
+            border-bottom: none;
+            padding: 20px;
+        }
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            font-weight: 600;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn-success {
+            background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .result-card {
+            margin-top: 25px;
+            display: none;
+        }
+        .aqi-indicator {
+            height: 150px;
+            width: 150px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .good {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+        }
+        .moderate {
+            background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
+        }
+        .unhealthy {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        }
+        .severe {
+            background: linear-gradient(135deg, #7f0000 0%, #ff0000 100%);
+        }
+        .health-advice {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        .tab-content {
+            padding-top: 20px;
+        }
+        .nav-tabs .nav-link {
+            border-radius: 8px 8px 0 0;
+            padding: 12px 25px;
+            font-weight: 600;
+        }
+        .nav-tabs .nav-link.active {
+            background: #f8f9fa;
+            border-color: #dee2e6 #dee2e6 #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="card">
+            <div class="card-header text-center">
+                <h1 class="display-5">Air Quality Index Predictor</h1>
+                <p class="lead">Predict AQI and get health recommendations based on air quality parameters</p>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="aqi-tab" data-bs-toggle="tab" data-bs-target="#aqi" type="button" role="tab" aria-controls="aqi" aria-selected="true">AQI Prediction</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="health-tab" data-bs-toggle="tab" data-bs-target="#health" type="button" role="tab" aria-controls="health" aria-selected="false">Health Prediction</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="myTabContent">
+                    <div class="tab-pane fade show active" id="aqi" role="tabpanel" aria-labelledby="aqi-tab">
+                        <form action="{{ url_for('predict') }}" method="post" id="aqi-form">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="T" class="form-label">Temperature (°C)</label>
+                                        <input type="number" step="0.01" class="form-control" id="T" name="T" required placeholder="Enter temperature">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="TM" class="form-label">Maximum Temperature (°C)</label>
+                                        <input type="number" step="0.01" class="form-control" id="TM" name="TM" required placeholder="Enter max temperature">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="Tm" class="form-label">Minimum Temperature (°C)</label>
+                                        <input type="number" step="0.01" class="form-control" id="Tm" name="Tm" required placeholder="Enter min temperature">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="SLP" class="form-label">Atmospheric Pressure (hPa)</label>
+                                        <input type="number" step="0.01" class="form-control" id="SLP" name="SLP" required placeholder="Enter atmospheric pressure">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="H" class="form-label">Humidity (%)</label>
+                                        <input type="number" step="0.01" class="form-control" id="H" name="H" required placeholder="Enter humidity">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="VV" class="form-label">Visibility (km)</label>
+                                        <input type="number" step="0.01" class="form-control" id="VV" name="VV" required placeholder="Enter visibility">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="V" class="form-label">Wind Speed (km/h)</label>
+                                        <input type="number" step="0.01" class="form-control" id="V" name="V" required placeholder="Enter wind speed">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="VM" class="form-label">Maximum Wind Speed (km/h)</label>
+                                        <input type="number" step="0.01" class="form-control" id="VM" name="VM" required placeholder="Enter max wind speed">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-3">
+                                <button type="button" class="btn btn-primary" onclick="predictAQI()">Predict AQI</button>
+                                <button type="reset" class="btn btn-secondary">Reset</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="tab-pane fade" id="health" role="tabpanel" aria-labelledby="health-tab">
+                        <form action="{{ url_for('predict_health') }}" method="post" id="health-form">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="aqi_value" class="form-label">AQI Value</label>
+                                        <input type="number" class="form-control" id="aqi_value" name="aqi_value" required placeholder="Enter AQI value">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="exposure_time" class="form-label">Exposure Time (hours)</label>
+                                        <input type="number" class="form-control" id="exposure_time" name="exposure_time" required placeholder="Enter exposure time">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="age" class="form-label">Age</label>
+                                        <input type="number" class="form-control" id="age" name="age" required placeholder="Enter age">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="health_condition" class="form-label">Pre-existing Health Condition</label>
+                                        <select class="form-select" id="health_condition" name="health_condition" required>
+                                            <option value="" selected disabled>Select condition</option>
+                                            <option value="none">None</option>
+                                            <option value="respiratory">Respiratory Issues</option>
+                                            <option value="cardiovascular">Cardiovascular Issues</option>
+                                            <option value="allergies">Allergies</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-3">
+                                <button type="button" class="btn btn-success" onclick="predictHealth()">Predict Health Impact</button>
+                                <button type="reset" class="btn btn-secondary">Reset</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AQI Result Card -->
+        <div class="card result-card" id="aqi-result">
+            <div class="card-header text-center">
+                <h3>AQI Prediction Results</h3>
+            </div>
+            <div class="card-body text-center">
+                <div class="aqi-indicator" id="aqi-indicator">0</div>
+                <h4 class="mt-4" id="aqi-category">Loading...</h4>
+                <p class="lead" id="aqi-description">Calculating your air quality index...</p>
+                <div class="health-advice" id="aqi-advice">
+                    <h5>Health Recommendations:</h5>
+                    <p id="aqi-recommendation">Please wait while we analyze the data...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Health Result Card -->
+        <div class="card result-card" id="health-result">
+            <div class="card-header text-center">
+                <h3>Health Impact Prediction</h3>
+            </div>
+            <div class="card-body">
+                <h4 class="text-center mb-4" id="health-impact-title">Analyzing health impact...</h4>
+                <div class="health-advice">
+                    <h5>Risk Assessment:</h5>
+                    <p id="health-risk">Please wait while we analyze the data...</p>
+                    
+                    <h5 class="mt-4">Recommendations:</h5>
+                    <ul id="health-recommendations">
+                        <li>Loading recommendations...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function predictAQI() {
+            // In a real application, this would send an AJAX request to your Flask backend
+            // For demo purposes, we'll simulate a response
+            
+            // Get form data
+            const formData = new FormData(document.getElementById('aqi-form'));
+            
+            // In a real app, you'd send this to your server and get a response
+            // Here we'll just simulate it for demonstration
+            fetch("{{ url_for('predict') }}", {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display the result card
+                document.getElementById('aqi-result').style.display = 'block';
+                
+                // Update the AQI indicator
+                const aqiElement = document.getElementById('aqi-indicator');
+                aqiElement.innerText = data.aqi.toFixed(2);
+                
+                // Set the appropriate color class
+                aqiElement.className = 'aqi-indicator';
+                if (data.aqi <= 50) {
+                    aqiElement.classList.add('good');
+                    document.getElementById('aqi-category').innerText = 'Good';
+                    document.getElementById('aqi-description').innerText = 'Air quality is considered satisfactory, and air pollution poses little or no risk.';
+                    document.getElementById('aqi-recommendation').innerText = 'It\'s a great day to be outside and enjoy outdoor activities.';
+                } else if (data.aqi <= 100) {
+                    aqiElement.classList.add('moderate');
+                    document.getElementById('aqi-category').innerText = 'Moderate';
+                    document.getElementById('aqi-description').innerText = 'Air quality is acceptable; however, there may be a moderate health concern for a very small number of people.';
+                    document.getElementById('aqi-recommendation').innerText = 'Unusually sensitive people should consider reducing prolonged or heavy outdoor exertion.';
+                } else if (data.aqi <= 200) {
+                    aqiElement.classList.add('unhealthy');
+                    document.getElementById('aqi-category').innerText = 'Unhealthy';
+                    document.getElementById('aqi-description').innerText = 'Everyone may begin to experience some adverse health effects, and members of sensitive groups may experience more serious effects.';
+                    document.getElementById('aqi-recommendation').innerText = 'Active children and adults, and people with respiratory disease, such as asthma, should limit prolonged outdoor exertion.';
+                } else {
+                    aqiElement.classList.add('severe');
+                    document.getElementById('aqi-category').innerText = 'Severe';
+                    document.getElementById('aqi-description').innerText = 'Health warnings of emergency conditions. The entire population is more likely to be affected.';
+                    document.getElementById('aqi-recommendation').innerText = 'Everyone should avoid all outdoor exertion; people with respiratory or heart disease, the elderly and children should remain indoors.';
+                }
+                
+                // Scroll to the result
+                document.getElementById('aqi-result').scrollIntoView({ behavior: 'smooth' });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error processing your request. Please try again.');
+            });
+        }
+
+        function predictHealth() {
+            // Get form data
+            const formData = new FormData(document.getElementById('health-form'));
+            
+            // In a real app, you'd send this to your server and get a response
+            // Here we'll just simulate it for demonstration
+            fetch("{{ url_for('predict_health') }}", {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display the result card
+                document.getElementById('health-result').style.display = 'block';
+                
+                // Update the health impact information
+                document.getElementById('health-impact-title').innerText = data.impact_level;
+                document.getElementById('health-risk').innerText = data.risk_description;
+                
+                // Update recommendations
+                const recommendationsElement = document.getElementById('health-recommendations');
+                recommendationsElement.innerHTML = '';
+                data.recommendations.forEach(rec => {
+                    const li = document.createElement('li');
+                    li.innerText = rec;
+                    recommendationsElement.appendChild(li);
+                });
+                
+                // Scroll to the result
+                document.getElementById('health-result').scrollIntoView({ behavior: 'smooth' });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error processing your request. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>
